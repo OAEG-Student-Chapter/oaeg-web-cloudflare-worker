@@ -1,32 +1,54 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import GraphPageApi from "./api/GraphPageApi";
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+	FB_PAGE_ACCESS_TOKEN: string
 }
+
+// define route
+
+const routes = {
+	album: "/album",
+	albums: "/albums"
+}
+
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+		const graph = new GraphPageApi(
+			env.FB_PAGE_ACCESS_TOKEN,
+			"v17.0",
+			"1431417997070793");
+
+		const requestUrl = new URL(request.url);
+
+		let res = "";
+
+		switch (requestUrl.pathname) {
+			case routes.album:
+				const albumId = requestUrl.searchParams.get("id");
+				
+				if (albumId == null || albumId === "")
+					return new Response("Not Found", {
+						status: 404
+					});
+
+				res = await graph.getSingleAlbum(albumId);
+				break;
+			case routes.albums:
+				res = await graph.getAlbums();
+				break;
+			default:
+				// 404
+				return new Response("Not Found", {
+					status: 404
+				});
+
+		}
+
+		return new Response(res, {
+			headers: {
+				"content-type": "application/json;charset=UTF-8",
+			},
+		});
 	},
 };
