@@ -49,7 +49,7 @@ export default {
 		return new Response(res, {
 			headers: {
 				"content-type": "application/json;charset=UTF-8",
-				"Access-Control-Allow-Origin": env.NODE_ENV == "production" ?  "*.oaeg.lk, oaeg.lk" : "*"
+				"Access-Control-Allow-Origin": env.NODE_ENV == "production" ?  "*.oaeg.lk" : "*"
 			},
 		});
 	},
