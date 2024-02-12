@@ -12,6 +12,10 @@ const routes = {
 	albums: "/albums"
 }
 
+const allowedOrigins = [
+	"https://oaeg.lk",
+	"https://www.oaeg.lk"
+]
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -21,6 +25,17 @@ export default {
 			"1431417997070793");
 
 		const requestUrl = new URL(request.url);
+
+		// get access request origin and check if it is allowed by checking ends with
+		const origin = request.headers.get("Access-Control-Allow-Origin") || request.headers.get("Origin");
+		console.log(origin);
+		if (origin && allowedOrigins.some(o => origin === o)) {
+			console.info(`Request from ${origin} is allowed`);
+		} else {
+			return new Response("Not Allowed", {
+				status: 403
+			});
+		}
 
 		let res = "";
 
@@ -49,8 +64,8 @@ export default {
 		return new Response(res, {
 			headers: {
 				"content-type": "application/json;charset=UTF-8",
-				"Access-Control-Allow-Origin": env.NODE_ENV == "production" ?  "*.oaeg.lk" : "*"
-			},
+				"Access-Control-Allow-Origin": env.NODE_ENV == "production" ?  origin! : "*"
+			}
 		});
 	},
 };
