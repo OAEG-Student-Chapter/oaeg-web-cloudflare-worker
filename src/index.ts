@@ -1,7 +1,8 @@
 import GraphPageApi from "./api/GraphPageApi";
 
 export interface Env {
-	FB_PAGE_ACCESS_TOKEN: string
+	FB_PAGE_ACCESS_TOKEN: string,
+	NODE_ENV:string
 }
 
 // define route
@@ -48,6 +49,7 @@ export default {
 		return new Response(res, {
 			headers: {
 				"content-type": "application/json;charset=UTF-8",
+				"Access-Control-Allow-Origin": env.NODE_ENV == "production" ?  "*.oaeg.lk, oaeg.lk" : "*"
 			},
 		});
 	},
