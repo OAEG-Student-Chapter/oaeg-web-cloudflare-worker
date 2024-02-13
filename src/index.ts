@@ -17,36 +17,27 @@ const allowedOrigins = [
 	"https://www.oaeg.lk"
 ]
 
-export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		const graph = new GraphPageApi(
-			env.FB_PAGE_ACCESS_TOKEN,
-			"v17.0",
-			"1431417997070793");
+const isOriginAllowed = (origin: string) => {
+	return allowedOrigins.some(o => origin === o);
+}
 
-		const requestUrl = new URL(request.url);
+async function handleRequest(request: Request, env:Env,){
 
-		// get access request origin and check if it is allowed by checking ends with
-		const origin = request.headers.get("Access-Control-Allow-Origin") || request.headers.get("Origin");
-		console.log(origin);
-		if (origin && allowedOrigins.some(o => origin === o)) {
-			console.info(`Request from ${origin} is allowed`);
-		} else {
-			return new Response("Not Allowed", {
-				status: 403
-			});
-		}
+	const PAGE_ID = "1431417997070793";
+	const graph = new GraphPageApi(
+		env.FB_PAGE_ACCESS_TOKEN,
+		"v17.0",
+		PAGE_ID);
 
 		let res = "";
+		const requestUrl = new URL(request.url);
 
 		switch (requestUrl.pathname) {
 			case routes.album:
 				const albumId = requestUrl.searchParams.get("id");
 				
 				if (albumId == null || albumId === "")
-					return new Response("Not Found", {
-						status: 404
-					});
+					throw new Error("Album ID is required");
 
 				res = await graph.getSingleAlbum(albumId);
 				break;
@@ -55,10 +46,32 @@ export default {
 				break;
 			default:
 				// 404
-				return new Response("Not Found", {
-					status: 404
-				});
+				throw new Error("Not Found");
+		}
 
+		return res;
+}
+
+export default {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+
+		// get access request origin and check if it is allowed by checking ends with
+		const origin = request.headers.get("Origin");
+
+		if (origin && !isOriginAllowed(origin)) {
+			return new Response("Not Allowed", {
+				status: 403
+			});
+		}
+
+		let res = "";
+		try{
+			res = await handleRequest(request, env);
+		}
+		catch(e){
+			return new Response((e as Error).message, {
+				status: 500
+			});
 		}
 
 		return new Response(res, {
